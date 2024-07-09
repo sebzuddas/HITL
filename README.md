@@ -15,10 +15,14 @@ The crux of creating a controller that could reliably perform these tasks lay in
 
 Conversely, the R matrix is associated with the cost related to the control inputs themselves. Tuning the R matrix involves a delicate balance, as it dictates the controller’s aggressiveness in responding to deviations from the desired state. A more conservative approach, signified by higher values in the R matrix, results in less aggressive control actions, reducing the risk of overcorrection but potentially leading to slower response times.
 
-## What were the difficulties of the project?
+## What were the difficulties of the project?
 
 The iterative process of adjusting the Q and R matrices was not only a technical challenge but also an engaging exercise in applying theoretical knowledge to a tangible, real-world problem. Through this project, I gained invaluable insights into the intricacies of control system design and the critical role of parameter tuning in achieving system stability and performance. The experience of bringing a model helicopter to a controlled flight, guided by principles learned in the classroom, was immensely rewarding, underscoring the power of HITL testing in bridging the gap between theory and practice in engineering.
 
 
 
+
+# The final outcome
+
+https://github.com/sebzuddas/HITL/assets/62427628/cb75461f-8392-41d1-bc5a-487048f5b79b
 
