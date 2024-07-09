@@ -24,5 +24,9 @@ The iterative process of adjusting the Q and R matrices was not only a technical
 
 # The final outcome
 
-https://github.com/sebzuddas/HITL/assets/62427628/cb75461f-8392-41d1-bc5a-487048f5b79b
+
+
+
+https://github.com/sebzuddas/HITL/assets/62427628/c3920700-ab6f-4cf5-918f-1a7d8536936b
+
 
