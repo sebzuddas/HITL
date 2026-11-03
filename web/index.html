@@ -5,7 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HITL Helicopter Simulator</title>
 <meta name="description" content="In-browser simulation of an LQR + Kalman filter controlled bi-rotor helicopter.">
+<link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
 </head>
 <body>
 <header>
@@ -14,7 +21,8 @@
 </header>
 <main>
   <section class="panel anim">
-    <canvas id="anim" width="640" height="300" aria-label="Helicopter animation"></canvas>
+    <canvas id="view3d" aria-label="3D helicopter view"></canvas>
+    <p class="hint">Drag to orbit, scroll to zoom. Pitch is drawn 3x exaggerated. Blue marker on the floor is 0° travel.</p>
     <div class="transport">
       <button id="play">Pause</button>
       <input id="scrub" type="range" min="0" max="1" step="0.001" value="0" aria-label="Time">
@@ -37,6 +45,25 @@
     <label>Elevation disturbance (mN·m) <output id="o-dist"></output>
       <input id="dist" type="range" min="-2" max="2" step="0.1" value="0"></label>
     <button id="reset">Reset defaults</button>
+  </section>
+
+  <section class="panel design">
+    <h2>Controller</h2>
+    <div class="row">
+      <label class="inline">Gains
+        <select id="mode">
+          <option value="original">Original (from MATLAB)</option>
+          <option value="custom">Custom LQR</option>
+        </select></label>
+      <button id="fitPreset">Load weights fitted to original</button>
+    </div>
+    <p class="hint">Weights are the diagonals of Q (states and integrators) and R (fans), on a log scale. Gains are re-solved in your browser with the discrete LQR (<code>lqrd</code>) for the linearised model, then run on the nonlinear plant. The Kalman filter is unchanged.</p>
+    <div class="grid">
+      <div id="qsliders"></div>
+      <div id="rsliders"></div>
+    </div>
+    <p id="designError" class="error" hidden></p>
+    <details><summary>Resulting gains</summary><pre id="gains"></pre></details>
   </section>
 
   <section class="panel plots">

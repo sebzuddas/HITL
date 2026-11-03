@@ -127,3 +127,13 @@ export function simulate(ctrl, overrides = {}) {
   }
   return out;
 }
+
+/** Hover voltage / fan slope used to linearise the plant (shared with design.js). */
+export function hoverPoint(ctrl, o = {}) {
+  const p = ctrl.params, { volts, thrust } = ctrl.fan;
+  const F0 = -p.g * (p.m2 * p.l3 - 2 * p.m1 * p.l1) / (2 * p.l1); // per fan, level hover
+  let i = 1; while (i < thrust.length - 1 && thrust[i] < F0) i++;
+  const slope = (thrust[i] - thrust[i - 1]) / (volts[i] - volts[i - 1]);
+  const Vh = volts[i - 1] + (F0 - thrust[i - 1]) / slope;
+  return { F0, Vh, slope };
+}

@@ -71,7 +71,13 @@ No build step and no dependencies. The page uses ES modules and `fetch`, so it h
 ### What the port contains
 
 - `web/js/sim.js`: nonlinear plant (elevation, pitch and travel dynamics as in the Simulink subsystems), first-order fan lag, fan thrust lookup, DAC/amplifier saturation, encoder quantisation, then the Kalman filter and LQR with integrators using the exported matrices at the 15 ms sample period.
-- `web/js/main.js`, `plot.js`: animation, sliders (reference steps, noise, fan strength and lag, disturbance) and plots.
+- `web/js/lqr.js`, `design.js`: matrix toolkit, `lqrd` port (Van Loan cost discretisation + structured-doubling Riccati solver) and the hover linearisation. Re-solving takes a few milliseconds, so gains update as you drag.
+- `web/js/view3d.js`: Three.js scene (loaded from a pinned jsDelivr build, no install needed). Drag to orbit; pitch is drawn 3x exaggerated. Without WebGL the page falls back to plots only.
+- `web/js/main.js`, `plot.js`: UI, sliders (reference steps, noise, fan strength and lag, disturbance) and plots.
+
+### Choosing your own cost matrices
+
+Switch **Gains** to *Custom LQR* and drag the sliders: `Q` is diagonal over the six states plus the two integrators, `R` is diagonal over the two fan voltages (log scale). Only the LQR gains change; the exported Kalman filter is reused. The repo never stored the original `Qx`/`Qu`, so *Load weights fitted to original* uses diagonal weights I fitted so that the browser `lqrd` reproduces the shipped gains to within about 3%. They are a stand-in, not your real weights.
 
 ### Accuracy caveat
 
