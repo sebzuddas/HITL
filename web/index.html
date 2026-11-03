@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HITL Helicopter Simulator</title>
+<meta name="description" content="In-browser simulation of an LQR + Kalman filter controlled bi-rotor helicopter.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <h1>Bi-rotor helicopter: LQR + Kalman filter</h1>
+  <p>A JavaScript port of the Simulink closed loop from the HITL project. The controller gains are the ones exported from MATLAB; the plant is the nonlinear 3-DOF model.</p>
+</header>
+<main>
+  <section class="panel anim">
+    <canvas id="anim" width="640" height="300" aria-label="Helicopter animation"></canvas>
+    <div class="transport">
+      <button id="play">Pause</button>
+      <input id="scrub" type="range" min="0" max="1" step="0.001" value="0" aria-label="Time">
+      <span id="clock">0.0 s</span>
+    </div>
+  </section>
+
+  <section class="panel controls">
+    <h2>Scenario</h2>
+    <label>Elevation step (°) <output id="o-elev"></output>
+      <input id="elevStep" type="range" min="-30" max="30" step="1" value="10"></label>
+    <label>Travel step (°) <output id="o-trav"></output>
+      <input id="travStep" type="range" min="-180" max="180" step="5" value="180"></label>
+    <label>Encoder noise (mrad) <output id="o-noise"></output>
+      <input id="noise" type="range" min="0" max="10" step="0.5" value="0"></label>
+    <label>Fan strength (%) <output id="o-thrust"></output>
+      <input id="thrust" type="range" min="70" max="130" step="1" value="100"></label>
+    <label>Fan lag τ (ms) <output id="o-tau"></output>
+      <input id="tau" type="range" min="20" max="500" step="10" value="100"></label>
+    <label>Elevation disturbance (mN·m) <output id="o-dist"></output>
+      <input id="dist" type="range" min="-2" max="2" step="0.1" value="0"></label>
+    <button id="reset">Reset defaults</button>
+  </section>
+
+  <section class="panel plots">
+    <h2>Elevation</h2><canvas id="p-elev" width="900" height="220"></canvas>
+    <h2>Travel</h2><canvas id="p-trav" width="900" height="220"></canvas>
+    <h2>Pitch</h2><canvas id="p-pitch" width="900" height="180"></canvas>
+    <h2>Fan voltages</h2><canvas id="p-volt" width="900" height="180"></canvas>
+  </section>
+</main>
+<footer>
+  <p>Source and write-up: <a id="repo" href="https://github.com/sebzuddas/HITL">github.com/sebzuddas/HITL</a>.
+  Pitch spring/damping and fan lag are tuned estimates, so this is a faithful reproduction of the controller, not of the physical rig.</p>
+</footer>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

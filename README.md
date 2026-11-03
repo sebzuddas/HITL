@@ -1,28 +1,92 @@
-# HITL
+# HITL: LQR control of a bi-rotor helicopter
 
-A repository for the Hardware In The Loop (HITL) project. 
+Hardware-in-the-loop (HITL) control project for a 3-DOF bi-rotor helicopter rig (elevation, pitch, travel). The controller is a discrete-time **LQR with integral action** fed by a **Kalman filter**, designed in MATLAB/Simulink and run against the real rig through a myDAQ.
 
-## What is Hardware in the Loop?
-In engineering, hardware-in-the-loop (HITL) testing is a pivotal process in the development of products, particularly during the prototyping phase. This approach involves the simplification and modelling of core system components, laying the groundwork for the subsequent development of various systems, including control systems. Engaging with this methodology as part of a university course presented both a challenge and an opportunity to delve into the practical application of control systems.
+**Live simulator:** once GitHub Pages is enabled, the in-browser version of the closed loop is served from this repo (see [Deploying](#deploying-the-simulator-to-github-pages)).
 
-## What was the objective?
+[![Final run](https://img.youtube.com/vi/video-id/0.jpg)](https://github.com/sebzuddas/HITL/assets/62427628/c3920700-ab6f-4cf5-918f-1a7d8536936b)
 
-The task at hand was the development of a control schema for a model bi-rotor helicopter, employing a state-space control strategy, with a specific focus on Linear Quadratic Regulator (LQR) techniques. The project’s objective was to engineer a controller capable of stabilizing the helicopter, guiding it through a series of predetermined manoeuvres: taking off, executing a 180° rotation, achieving stabilization, rotating back 180°, and landing.
+## The task
 
-## What are the core ideas of state-space control?
+Stabilise the helicopter and fly a fixed manoeuvre: take off, rotate 180° in travel, hold, rotate back, land. The elevation loop also takes a step (0° to 10°) to check tracking.
 
-The crux of creating a controller that could reliably perform these tasks lay in the tuning of the Q and R matrices. The Q matrix is intimately tied to the cost function of the system’s states, emphasizing the importance of each state variable within the overall cost function. Adjusting the Q matrix allows for the prioritization of certain state variables over others, directing the controller’s focus towards stabilizing those specific variables. This is crucial in ensuring that the helicopter maintains desired flight characteristics and responds appropriately to control inputs.
+## How the controller works
 
-Conversely, the R matrix is associated with the cost related to the control inputs themselves. Tuning the R matrix involves a delicate balance, as it dictates the controller’s aggressiveness in responding to deviations from the desired state. A more conservative approach, signified by higher values in the R matrix, results in less aggressive control actions, reducing the risk of overcorrection but potentially leading to slower response times.
+| Piece | What it does |
+|-------|--------------|
+| State vector | `[elev, pitch, travel, elev_dot, pitch_dot, travel_dot]`, linearised around level hover |
+| LQR | Weights `Qx` (state cost) and `Qu` (control cost) trade accuracy against actuator effort. Larger `Qu` gives gentler control and slower response |
+| Integral action | Elevation and travel errors are integrated (state augmentation), removing steady-state error |
+| Kalman filter | Estimates all six states from the three encoder measurements |
+| Output | Two fan voltages, offset by the hover voltage `U_e`, saturated by the DAC and amplifier |
 
-## What were the difficulties of the project?
+Tuning `Qx` and `Qu` iteratively was the main difficulty of the project.
 
-The iterative process of adjusting the Q and R matrices was not only a technical challenge but also an engaging exercise in applying theoretical knowledge to a tangible, real-world problem. Through this project, I gained invaluable insights into the intricacies of control system design and the critical role of parameter tuning in achieving system stability and performance. The experience of bringing a model helicopter to a controlled flight, guided by principles learned in the classroom, was immensely rewarding, underscoring the power of HITL testing in bridging the gap between theory and practice in engineering.
+## Results
 
+| Elevation | Travel |
+|---|---|
+| ![Elevation](docs/img/Elevation.png) | ![Travel](docs/img/Travel.png) |
+| **Pitch** | **Control signals** |
+| ![Pitch](docs/img/Pitch.png) | ![Control](docs/img/Control.png) |
 
+## Repository layout
 
+```
+HITL/
+├── matlab/
+│   ├── heli.m               # parameters + LQR/Kalman design, writes data/*.txt
+│   ├── assignmentOne.m      # Lagrangian derivation of the equations of motion
+│   ├── plotCheck.m          # fan step-response system identification
+│   ├── simulink/            # ClosedLoopSys, OpenLoopSys, PitchSys models
+│   └── legacy/              # older model versions, backups, lecture notebook
+├── data/                    # controller matrices and measurements exported from MATLAB
+├── web/                     # browser simulator (static site, deployed to Pages)
+│   ├── index.html, css/, js/
+│   └── data/controller.json # generated from data/ (committed, and rebuilt in CI)
+├── scripts/
+│   ├── export_web_data.py   # data/*.txt -> web/data/controller.json
+│   └── sim_check.mjs        # headless sanity check of the JS simulation
+├── docs/                    # result plots and the lab handout (PDF)
+└── .github/workflows/pages.yml
+```
 
-# The final outcome
+## Running the MATLAB / Simulink version
 
+1. Open `matlab/heli.m` and run it. It computes the controller and writes the matrices into the current folder (move or copy them to `data/` if you want to keep them).
+2. Open `matlab/simulink/ClosedLoopSys.mdl` and simulate.
 
-[![alt text](https://img.youtube.com/vi/video-id/0.jpg)](https://github.com/sebzuddas/HITL/assets/62427628/c3920700-ab6f-4cf5-918f-1a7d8536936b)
+Note: `heli.m` in this repo is the final, partly filled-in assignment template. Several `Ex` sections still contain placeholder values (for example `k_s`, `k_a`, `U_e = ;`) and the design block is commented out, so it will not run unmodified. The controller that actually flew is the one stored in `data/`.
+
+## Running the browser simulator locally
+
+```bash
+python3 scripts/export_web_data.py     # only needed if data/ changed
+python3 -m http.server -d web 8000     # open http://localhost:8000
+node scripts/sim_check.mjs             # optional headless check
+```
+
+No build step and no dependencies. The page uses ES modules and `fetch`, so it has to be served over HTTP rather than opened as a `file://` URL.
+
+### What the port contains
+
+- `web/js/sim.js`: nonlinear plant (elevation, pitch and travel dynamics as in the Simulink subsystems), first-order fan lag, fan thrust lookup, DAC/amplifier saturation, encoder quantisation, then the Kalman filter and LQR with integrators using the exported matrices at the 15 ms sample period.
+- `web/js/main.js`, `plot.js`: animation, sliders (reference steps, noise, fan strength and lag, disturbance) and plots.
+
+### Accuracy caveat
+
+The controller gains, fan curve and rigid-body parameters come straight from the project files. Three plant values are **not** in the repo and were tuned so the loop reproduces the recorded lab plots (travel overshoot to roughly 185°, final value near 0°):
+
+- pitch spring `0.01` and damping `0.002` (the `heli.m` placeholder of `k_s = 4` makes pitch almost rigid and the loop does not track),
+- fan lag τ = 100 ms,
+- elevation damping `0.002`.
+
+Treat the simulator as a faithful demonstration of the controller, not a calibrated model of the rig.
+
+## Deploying the simulator to GitHub Pages
+
+The workflow in [.github/workflows/pages.yml](.github/workflows/pages.yml) regenerates `web/data/controller.json`, runs the headless check, and publishes the `web/` folder on every push to `main`.
+
+One-time setup: in the repo go to **Settings > Pages** and set **Source** to **GitHub Actions**. Then push to `main` (or run the workflow manually from the Actions tab). The site appears at `https://<user>.github.io/HITL/`.
+
+All asset paths in `web/` are relative, so it works under the `/HITL/` sub-path.
